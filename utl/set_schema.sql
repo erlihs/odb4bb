@@ -1,0 +1,4 @@
+BEGIN
+  EXECUTE IMMEDIATE 'ALTER SESSION SET CURRENT_SCHEMA = ' || :schema_name;    
+END;
+/
