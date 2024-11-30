@@ -32,6 +32,12 @@ CREATE OR REPLACE PACKAGE pck_api_auth AS -- Package provides methods for issuin
     ) 
     RETURN app_users.uuid%TYPE; -- User unique ID
 
+    FUNCTION refresh(-- Function returns user unique ID from cookie passed in the request
+        p_cookie_name VARCHAR2 DEFAULT 'refresh_token', -- Cookie name
+        p_check_expiration CHAR DEFAULT 'Y' -- Check token expiration (Y/N)
+    ) 
+    RETURN app_users.uuid%TYPE; -- User unique ID
+
     FUNCTION priv( -- Function checks user privileges
         p_uuid app_users.uuid%TYPE DEFAULT NULL, -- User unique ID (NULL - current user from bearer token)
         p_role app_roles.role%TYPE DEFAULT NULL -- Privilege

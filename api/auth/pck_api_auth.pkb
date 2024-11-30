@@ -149,12 +149,12 @@ create or replace PACKAGE BODY pck_api_auth AS
         COMMIT;
     END;
 
-    FUNCTION uuid (
+    FUNCTION uuid_from_token (
+        p_token app_tokens.token%TYPE,
         p_check_expiration CHAR DEFAULT 'Y'
     )
     RETURN app_users.uuid%TYPE 
     AS
-        v_token app_tokens.token%TYPE := REPLACE(OWA_UTIL.GET_CGI_ENV('Authorization'),'Bearer ','');
         v_secret app_token_settings.secret%TYPE;
         v_iss app_token_settings.issuer%TYPE;
         v_sub app_users.uuid%TYPE;
@@ -163,11 +163,11 @@ create or replace PACKAGE BODY pck_api_auth AS
         v_uuid app_users.uuid%TYPE;
     BEGIN
 
-        IF v_token IS NULL THEN RETURN NULL; END IF;
+        IF p_token IS NULL THEN RETURN NULL; END IF;
         
         SELECT secret INTO v_secret FROM app_token_settings;
 
-        jwt_decode(v_token, v_secret, v_iss, v_sub, v_aud, v_exp);
+        jwt_decode(p_token, v_secret, v_iss, v_sub, v_aud, v_exp);
 
         BEGIN  
             SELECT u.uuid INTO v_uuid
@@ -176,7 +176,7 @@ create or replace PACKAGE BODY pck_api_auth AS
             AND u.id IN (
                 SELECT id_user
                 FROM app_tokens
-                WHERE token = v_token
+                WHERE token = p_token
                 AND (p_check_expiration = 'N' OR expiration > SYSTIMESTAMP)
             )
             AND v_iss = (
@@ -188,6 +188,61 @@ create or replace PACKAGE BODY pck_api_auth AS
         END;
 
         RETURN v_uuid;
+
+    END;
+
+    FUNCTION uuid (
+        p_check_expiration CHAR DEFAULT 'Y'
+    )
+    RETURN app_users.uuid%TYPE 
+    AS
+        v_token app_tokens.token%TYPE := REPLACE(OWA_UTIL.GET_CGI_ENV('Authorization'),'Bearer ','');
+    BEGIN
+
+        RETURN uuid_from_token(v_token, p_check_expiration);
+
+    END;
+    
+    FUNCTION refresh(
+        p_cookie_name VARCHAR2 DEFAULT 'refresh_token', 
+        p_check_expiration CHAR DEFAULT 'Y' 
+    ) 
+    RETURN app_users.uuid%TYPE
+    AS
+    
+        v_token app_tokens.token%TYPE;
+
+        FUNCTION get_cookie_value(
+            p_cookie_name IN VARCHAR2
+        ) RETURN VARCHAR2 
+        AS
+            v_cookies VARCHAR2(4000);
+            v_start_pos NUMBER;
+            v_end_pos NUMBER;
+            v_cookie_value VARCHAR2(4000);
+        BEGIN
+            v_cookies := owa_util.get_cgi_env('HTTP_COOKIE');
+            v_start_pos := INSTR(v_cookies, p_cookie_name || '=');
+
+            IF v_start_pos > 0 THEN
+                v_start_pos := v_start_pos + LENGTH(p_cookie_name) + 1;
+                v_end_pos := INSTR(v_cookies, ';', v_start_pos);
+                IF v_end_pos = 0 THEN
+                    v_end_pos := LENGTH(v_cookies) + 1;
+                END IF;
+                v_cookie_value := SUBSTR(v_cookies, v_start_pos, v_end_pos - v_start_pos);
+            ELSE
+                v_cookie_value := NULL;
+            END IF;
+
+            RETURN v_cookie_value;
+        END;
+
+    BEGIN
+
+        v_token := get_cookie_value(p_cookie_name);
+
+        RETURN uuid_from_token(v_token, p_check_expiration);
 
     END;
 
