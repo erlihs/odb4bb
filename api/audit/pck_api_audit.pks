@@ -24,22 +24,26 @@ CREATE OR REPLACE PACKAGE pck_api_audit AS -- Package defines audit logging API
 
     PROCEDURE dbg( -- Procedure logs a debug entry
         p_action app_audit.action%TYPE, -- Action performed
-        p_details app_audit.details%TYPE DEFAULT NULL -- Details
+        p_details app_audit.details%TYPE DEFAULT NULL, -- Details
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL -- User unique ID
     );
 
     PROCEDURE inf( -- Procedure logs an info entry
         p_action app_audit.action%TYPE, -- Action performed
-        p_details app_audit.details%TYPE DEFAULT NULL -- Details
+        p_details app_audit.details%TYPE DEFAULT NULL, -- Details
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL -- User unique ID
     );
 
     PROCEDURE wrn( -- Procedure logs a warning entry
         p_action app_audit.action%TYPE, -- Action performed
-        p_details app_audit.details%TYPE DEFAULT NULL -- Details
+        p_details app_audit.details%TYPE DEFAULT NULL, -- Details
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL -- User unique ID
     );
 
     PROCEDURE err( -- Procedure logs an error entry
         p_action app_audit.action%TYPE, -- Action performed
-        p_details app_audit.details%TYPE DEFAULT NULL -- Details
+        p_details app_audit.details%TYPE DEFAULT NULL, -- Details
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL -- User unique ID
     );
 
 END;

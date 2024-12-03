@@ -73,42 +73,46 @@ CREATE OR REPLACE PACKAGE BODY pck_api_audit AS
 
     PROCEDURE dbg(
         p_action app_audit.action%TYPE,
-        p_details app_audit.details%TYPE DEFAULT NULL
+        p_details app_audit.details%TYPE DEFAULT NULL,
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL
     )
     AS
         v_id app_audit.id%TYPE;
     BEGIN
-        v_id := log(NULL, 'D', p_action, p_details);
+        v_id := log(p_uuid, 'D', p_action, p_details);
     END;
 
     PROCEDURE inf(
         p_action app_audit.action%TYPE,
-        p_details app_audit.details%TYPE DEFAULT NULL
+        p_details app_audit.details%TYPE DEFAULT NULL,
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL
     )
     AS
         v_id app_audit.id%TYPE;
     BEGIN
-        v_id := log(NULL, 'I', p_action, p_details);
+        v_id := log(p_uuid, 'I', p_action, p_details);
     END;
 
     PROCEDURE wrn(
         p_action app_audit.action%TYPE,
-        p_details app_audit.details%TYPE DEFAULT NULL
+        p_details app_audit.details%TYPE DEFAULT NULL,
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL
     )
     AS
         v_id app_audit.id%TYPE;
     BEGIN
-        v_id := log(NULL, 'W', p_action, p_details);
+        v_id := log(p_uuid, 'W', p_action, p_details);
     END;
 
     PROCEDURE err(
         p_action app_audit.action%TYPE,
-        p_details app_audit.details%TYPE DEFAULT NULL
+        p_details app_audit.details%TYPE DEFAULT NULL,
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL
     )
     AS
         v_id app_audit.id%TYPE;
     BEGIN
-        v_id := log(NULL, 'E', p_action, p_details);
+        v_id := log(p_uuid, 'E', p_action, p_details);
     END;
 
 END;
