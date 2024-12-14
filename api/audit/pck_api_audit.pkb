@@ -4,7 +4,8 @@ CREATE OR REPLACE PACKAGE BODY pck_api_audit AS
         p_uuid app_audit.uuid%TYPE,
         p_severity app_audit.severity%TYPE,
         p_action app_audit.action%TYPE,
-        p_details app_audit.details%TYPE
+        p_details app_audit.details%TYPE,
+        p_created app_audit.created%TYPE DEFAULT SYSTIMESTAMP
     ) RETURN app_audit.id%TYPE
     AS
         v_stack VARCHAR2(2000) := SUBSTR(SQLERRM || CHR(10) || '-- ' || CHR(10) || dbms_utility.format_error_backtrace, 1, 2000);
@@ -24,7 +25,7 @@ CREATE OR REPLACE PACKAGE BODY pck_api_audit AS
                 NULL;
         END;
 
-        INSERT INTO app_audit (uuid, severity, action, details, stack, agent, ip)
+        INSERT INTO app_audit (uuid, severity, action, details, stack, agent, ip, created)
         VALUES (
             p_uuid, 
             p_severity, 
@@ -32,7 +33,8 @@ CREATE OR REPLACE PACKAGE BODY pck_api_audit AS
             SUBSTR(CASE WHEN v_request IS NULL THEN NULL ELSE v_request || '?' END || p_details, 1,  2000),
             CASE WHEN p_severity = 'E' THEN v_stack ELSE NULL END,
             v_agent, 
-            v_ip
+            v_ip,
+            p_created
         ) RETURNING id INTO v_id;
 
         COMMIT;
@@ -74,46 +76,85 @@ CREATE OR REPLACE PACKAGE BODY pck_api_audit AS
     PROCEDURE dbg(
         p_action app_audit.action%TYPE,
         p_details app_audit.details%TYPE DEFAULT NULL,
-        p_uuid app_audit.uuid%TYPE DEFAULT NULL
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL,
+        p_created app_audit.created%TYPE DEFAULT SYSTIMESTAMP
     )
     AS
         v_id app_audit.id%TYPE;
     BEGIN
-        v_id := log(p_uuid, 'D', p_action, p_details);
+        v_id := log(p_uuid, 'D', p_action, p_details, p_created);
     END;
 
     PROCEDURE inf(
         p_action app_audit.action%TYPE,
         p_details app_audit.details%TYPE DEFAULT NULL,
-        p_uuid app_audit.uuid%TYPE DEFAULT NULL
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL,
+        p_created app_audit.created%TYPE DEFAULT SYSTIMESTAMP
     )
     AS
         v_id app_audit.id%TYPE;
     BEGIN
-        v_id := log(p_uuid, 'I', p_action, p_details);
+        v_id := log(p_uuid, 'I', p_action, p_details, p_created);
     END;
 
     PROCEDURE wrn(
         p_action app_audit.action%TYPE,
         p_details app_audit.details%TYPE DEFAULT NULL,
-        p_uuid app_audit.uuid%TYPE DEFAULT NULL
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL,
+        p_created app_audit.created%TYPE DEFAULT SYSTIMESTAMP
     )
     AS
         v_id app_audit.id%TYPE;
     BEGIN
-        v_id := log(p_uuid, 'W', p_action, p_details);
+        v_id := log(p_uuid, 'W', p_action, p_details, p_created);
     END;
 
     PROCEDURE err(
         p_action app_audit.action%TYPE,
         p_details app_audit.details%TYPE DEFAULT NULL,
-        p_uuid app_audit.uuid%TYPE DEFAULT NULL
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL,
+        p_created app_audit.created%TYPE DEFAULT SYSTIMESTAMP
     )
     AS
         v_id app_audit.id%TYPE;
     BEGIN
-        v_id := log(p_uuid, 'E', p_action, p_details);
+        v_id := log(p_uuid, 'E', p_action, p_details, p_created);
     END;
+
+    PROCEDURE audit(
+        p_data CLOB, 
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL
+    ) AS
+        v_agent VARCHAR2(2000);
+        v_ip VARCHAR2(2000);
+        PRAGMA AUTONOMOUS_TRANSACTION;
+    BEGIN
+
+        BEGIN
+            v_agent := TRIM(owa_util.get_cgi_env('HTTP_USER_AGENT'));
+            v_ip := TRIM(owa_util.get_cgi_env('REMOTE_ADDR'));
+        EXCEPTION
+            WHEN OTHERS THEN
+                NULL;
+        END;
+
+        INSERT INTO app_audit (uuid, severity, action, details, created, agent, ip)
+        SELECT p_uuid, severity, action, details, created, v_agent, v_ip
+        FROM JSON_TABLE(p_data, '$[*]'
+            COLUMNS (
+                severity VARCHAR2(3) PATH '$.severity',
+                action VARCHAR2(4000) PATH '$.action',
+                details VARCHAR2(4000) PATH '$.details',
+                created TIMESTAMP PATH '$.created'
+            )
+        );
+
+        COMMIT;            
+
+    EXCEPTION
+        WHEN OTHERS THEN
+            err('Audit error', mrg('data', p_data), p_uuid);
+    END;    
 
 END;
 /

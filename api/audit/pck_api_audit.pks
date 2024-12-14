@@ -19,30 +19,40 @@ CREATE OR REPLACE PACKAGE pck_api_audit AS -- Package defines audit logging API
         p_uuid app_audit.uuid%TYPE, -- User unique ID 
         p_severity app_audit.severity%TYPE, -- Severity level (D - debug, I - info, W - warning, E - error)
         p_action app_audit.action%TYPE, -- Action performed
-        p_details app_audit.details%TYPE -- Details
+        p_details app_audit.details%TYPE, -- Details
+        p_created app_audit.created%TYPE DEFAULT SYSTIMESTAMP -- Entry creation timestamp
     ) RETURN app_audit.id%TYPE; -- Log entry identifier
 
     PROCEDURE dbg( -- Procedure logs a debug entry
         p_action app_audit.action%TYPE, -- Action performed
         p_details app_audit.details%TYPE DEFAULT NULL, -- Details
-        p_uuid app_audit.uuid%TYPE DEFAULT NULL -- User unique ID
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL, -- User unique ID
+        p_created app_audit.created%TYPE DEFAULT SYSTIMESTAMP -- Entry creation timestamp
     );
 
     PROCEDURE inf( -- Procedure logs an info entry
         p_action app_audit.action%TYPE, -- Action performed
         p_details app_audit.details%TYPE DEFAULT NULL, -- Details
-        p_uuid app_audit.uuid%TYPE DEFAULT NULL -- User unique ID
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL, -- User unique ID
+        p_created app_audit.created%TYPE DEFAULT SYSTIMESTAMP -- Entry creation timestamp
     );
 
     PROCEDURE wrn( -- Procedure logs a warning entry
         p_action app_audit.action%TYPE, -- Action performed
         p_details app_audit.details%TYPE DEFAULT NULL, -- Details
-        p_uuid app_audit.uuid%TYPE DEFAULT NULL -- User unique ID
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL, -- User unique ID
+        p_created app_audit.created%TYPE DEFAULT SYSTIMESTAMP -- Entry creation timestamp
     );
 
     PROCEDURE err( -- Procedure logs an error entry
         p_action app_audit.action%TYPE, -- Action performed
         p_details app_audit.details%TYPE DEFAULT NULL, -- Details
+        p_uuid app_audit.uuid%TYPE DEFAULT NULL, -- User unique ID
+        p_created app_audit.created%TYPE DEFAULT SYSTIMESTAMP -- Entry creation timestamp
+    );
+
+    PROCEDURE audit( -- Procedure logs multiple audit entries
+        p_data CLOB, -- Audit data in JSON format [{severity, action, details, created}]
         p_uuid app_audit.uuid%TYPE DEFAULT NULL -- User unique ID
     );
 

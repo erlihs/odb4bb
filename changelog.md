@@ -1,5 +1,12 @@
 # Changelog
 
+## Release 0.2.3 (2024-12-14)
+
+### Features
+
+- optional `created` parameter added to audit routines `pck_api_audit.dbg`, `...inf`, `...wrn`, `...err`
+- new routine added to audit routuntines `pck_api_audit.audit` providing capability of bulk insert of audit data 
+
 ## Release 0.2.2 (2024-12-03)
 
 ### Features
