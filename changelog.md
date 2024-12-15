@@ -1,5 +1,11 @@
 # Changelog
 
+## Release 0.2.4 (2024-12-15)
+
+### Bugfixes
+
+- saving `:app_host` from `@setup.sql` in `app_settings`  
+
 ## Release 0.2.3 (2024-12-14)
 
 ### Features
