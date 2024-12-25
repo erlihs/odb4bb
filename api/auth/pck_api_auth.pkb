@@ -70,6 +70,15 @@ create or replace PACKAGE BODY pck_api_auth AS
 
     -- PUBLIC
 
+    FUNCTION pwd( 
+        p_password VARCHAR2 
+    ) RETURN VARCHAR2 
+    AS
+        c_salt VARCHAR2(32 CHAR) := DBMS_RANDOM.STRING('X', 32);
+    BEGIN
+        RETURN c_salt || DBMS_CRYPTO.HASH(UTL_RAW.CAST_TO_RAW(TRIM(p_password) || c_salt),4);
+    END; 
+
     FUNCTION auth( 
         p_username app_users.username%TYPE, 
         p_password app_users.password%TYPE 
@@ -146,6 +155,17 @@ create or replace PACKAGE BODY pck_api_auth AS
         PRAGMA AUTONOMOUS_TRANSACTION;
     BEGIN
         DELETE FROM app_tokens WHERE id_user = (SELECT id FROM app_users WHERE uuid = p_uuid) AND (p_type IS NULL OR id_token_type = p_type);
+        COMMIT;
+    END;
+
+    PROCEDURE cleanup
+    AS
+        PRAGMA AUTONOMOUS_TRANSACTION;
+    BEGIN
+        DELETE FROM app_tokens WHERE expiration < SYSTIMESTAMP;
+
+        DBMS_OUTPUT.PUT_LINE('Tokens cleaned up: ' || SQL%ROWCOUNT);
+
         COMMIT;
     END;
 
@@ -262,7 +282,7 @@ create or replace PACKAGE BODY pck_api_auth AS
         BEGIN
             SELECT permission INTO v_priv
             FROM app_permissions
-            WHERE id_user = (SELECT id_user FROM app_users WHERE uuid = v_uuid)
+            WHERE id_user = (SELECT id FROM app_users WHERE uuid = v_uuid)
             AND id_role = (SELECT id FROM app_roles WHERE role = UPPER(p_role))
             AND (valid_from IS NULL OR valid_from <= SYSTIMESTAMP)
             AND (valid_to IS NULL OR valid_to > SYSTIMESTAMP);
@@ -273,6 +293,57 @@ create or replace PACKAGE BODY pck_api_auth AS
         RETURN v_priv;
 
     END;        
+
+    FUNCTION role( 
+        p_uuid app_users.uuid%TYPE DEFAULT NULL, 
+        p_role app_roles.role%TYPE 
+    ) RETURN PLS_INTEGER
+    AS
+        v_uuid app_users.uuid%TYPE := p_uuid;
+        v_role PLS_INTEGER := 0;
+    BEGIN
+
+        IF v_uuid IS NULL THEN v_uuid := uuid(); END IF;
+
+        IF v_uuid IS NULL THEN RETURN v_role; END IF; 
+
+        SELECT COUNT(permission) INTO v_role
+        FROM app_permissions
+        WHERE id_user = (SELECT id FROM app_users WHERE uuid = v_uuid)
+        AND id_role = (SELECT id FROM app_roles WHERE role = UPPER(p_role))
+        AND (valid_from IS NULL OR valid_from <= SYSTIMESTAMP)
+        AND (valid_to IS NULL OR valid_to > SYSTIMESTAMP);
+
+        RETURN v_role;
+
+    END;        
+
+
+    FUNCTION perm(
+        p_uuid app_users.uuid%TYPE DEFAULT NULL,
+        p_role app_roles.role%TYPE,
+        p_permission app_permissions.permission%TYPE
+    ) RETURN PLS_INTEGER 
+    AS
+        v_uuid app_users.uuid%TYPE := p_uuid;
+        v_perm PLS_INTEGER := 0;
+    BEGIN
+        
+        IF v_uuid IS NULL THEN v_uuid := uuid(); END IF;
+
+        IF v_uuid IS NULL THEN RETURN v_perm; END IF; 
+
+        SELECT COUNT(permission) INTO v_perm
+        FROM app_permissions
+        WHERE id_user = (SELECT id FROM app_users WHERE uuid = v_uuid)
+        AND id_role = (SELECT id FROM app_roles WHERE role = UPPER(p_role))
+        AND permission = p_permission
+        AND (valid_from IS NULL OR valid_from <= SYSTIMESTAMP)
+        AND (valid_to IS NULL OR valid_to > SYSTIMESTAMP);
+
+        RETURN v_perm;
+
+    END;
 
     PROCEDURE http_401
     AS

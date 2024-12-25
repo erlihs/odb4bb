@@ -82,6 +82,7 @@ PROMPT Creating API for Authentication and Authorization
 
 PROMPT Creating API for Audit
 @./api/audit/setup_app_audit.sql
+@./api/audit/setup_app_audit_archive.sql
 @./api/audit/pck_api_audit.pks
 @./api/audit/pck_api_audit.pkb
 @./api/audit/test_audit.sql
@@ -96,6 +97,10 @@ PROMPT Creating API for Job scheduling
 @./api/jobs/pck_api_jobs.pks
 @./api/jobs/pck_api_jobs.pkb
 @./api/jobs/test_jobs.sql
+
+PROMPT Creating API for Validations
+@./api/validate/pck_api_validate.pks
+@./api/validate/pck_api_validate.pkb
 
 PROMPT Creating API for Zip file handling
 @./api/zip/pck_api_zip.pks

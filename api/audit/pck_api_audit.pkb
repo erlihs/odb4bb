@@ -139,12 +139,12 @@ CREATE OR REPLACE PACKAGE BODY pck_api_audit AS
         END;
 
         INSERT INTO app_audit (uuid, severity, action, details, created, agent, ip)
-        SELECT p_uuid, severity, action, details, created, v_agent, v_ip
+        SELECT p_uuid, severity, action, TRIM(DBMS_LOB.SUBSTR(details, 2000, 1)), created, v_agent, v_ip
         FROM JSON_TABLE(p_data, '$[*]'
             COLUMNS (
                 severity VARCHAR2(3) PATH '$.severity',
                 action VARCHAR2(4000) PATH '$.action',
-                details VARCHAR2(4000) PATH '$.details',
+                details CLOB PATH '$.details',
                 created TIMESTAMP PATH '$.created'
             )
         );
@@ -155,6 +155,26 @@ CREATE OR REPLACE PACKAGE BODY pck_api_audit AS
         WHEN OTHERS THEN
             err('Audit error', mrg('data', p_data), p_uuid);
     END;    
+
+    PROCEDURE archive( 
+        p_days NUMBER DEFAULT 30 
+    ) AS
+        v TIMESTAMP := SYSTIMESTAMP - p_days;
+        PRAGMA AUTONOMOUS_TRANSACTION;
+    BEGIN
+
+        INSERT INTO app_audit_archive (id, uuid, severity, action, details, stack, agent, ip, created)
+        SELECT id, uuid, severity, action, details, stack, agent, ip, created
+        FROM app_audit
+        WHERE created <= v;
+
+        DELETE FROM app_audit WHERE created <= v;
+
+        DBMS_OUTPUT.PUT_LINE('Archived ' || SQL%ROWCOUNT || ' records.');
+        
+        COMMIT;
+
+    END;
 
 END;
 /

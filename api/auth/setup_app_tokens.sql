@@ -138,9 +138,20 @@ EXCEPTION
 END;
 /
 
-BEGIN 
-   EXECUTE IMMEDIATE 'CREATE UNIQUE INDEX idq_app_tokens ON app_tokens(id_user, id_token_type)'; 
-EXCEPTION 
-   WHEN OTHERS THEN IF SQLCODE NOT IN (-955) THEN RAISE; END IF; 
+BEGIN
+	EXECUTE IMMEDIATE '	
+CREATE INDEX idx_app_tokens_expiration ON app_tokens(expiration)
+	';
+EXCEPTION
+	WHEN OTHERS THEN IF SQLCODE NOT IN (-955) THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+	EXECUTE IMMEDIATE '	
+CREATE INDEX idx_app_tokens_id_user ON app_tokens(id_user)
+	';
+EXCEPTION
+	WHEN OTHERS THEN IF SQLCODE NOT IN (-955) THEN RAISE; END IF;
 END;
 /

@@ -1,5 +1,9 @@
 CREATE OR REPLACE PACKAGE pck_api_auth AS -- Package provides methods for issuing and validating tokens 
 
+    FUNCTION pwd( -- Function returns hashed password
+        p_password VARCHAR2 -- Password
+    ) RETURN VARCHAR2; -- Hashed password
+    
     FUNCTION auth( -- Function authenticates user
         p_username app_users.username%TYPE, -- Username
         p_password app_users.password%TYPE -- Password
@@ -27,6 +31,8 @@ CREATE OR REPLACE PACKAGE pck_api_auth AS -- Package provides methods for issuin
         p_type app_token_types.id%TYPE DEFAULT NULL -- Token type (APP_TOKEN_TYPES.ID), NULL - all tokens
     );
 
+    PROCEDURE cleanup; -- Procedure revokes expired tokens
+
     FUNCTION uuid(-- Function returns user unique ID from JWT token passed in the Authorization header as a Bearer token
         p_check_expiration CHAR DEFAULT 'Y' -- Check token expiration (Y/N)
     ) 
@@ -38,10 +44,21 @@ CREATE OR REPLACE PACKAGE pck_api_auth AS -- Package provides methods for issuin
     ) 
     RETURN app_users.uuid%TYPE; -- User unique ID
 
-    FUNCTION priv( -- Function checks user privileges
+    FUNCTION priv( -- Function checks user privileges (Deprecated)
         p_uuid app_users.uuid%TYPE DEFAULT NULL, -- User unique ID (NULL - current user from bearer token)
         p_role app_roles.role%TYPE DEFAULT NULL -- Privilege
     ) RETURN app_permissions.permission%TYPE; -- Privilege (NULL - no pprivilege)
+
+    FUNCTION role( -- Function checks if user has role
+        p_uuid app_users.uuid%TYPE DEFAULT NULL, -- User unique ID (NULL - current user from bearer token)
+        p_role app_roles.role%TYPE -- Role
+    ) RETURN PLS_INTEGER; -- Permission count for the role (0 - no role)
+
+    FUNCTION perm( -- Function checks user permission
+        p_uuid app_users.uuid%TYPE DEFAULT NULL, -- User unique ID (NULL - current user from bearer token)
+        p_role app_roles.role%TYPE, -- Role
+        p_permission app_permissions.permission%TYPE -- Permission
+    ) RETURN PLS_INTEGER; -- Permission (0 - no permission, 1 - has permission)
 
     PROCEDURE http_401; -- Procedure sends HTTP 401 Unauthorized status
 

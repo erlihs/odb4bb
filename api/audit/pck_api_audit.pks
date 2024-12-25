@@ -56,5 +56,9 @@ CREATE OR REPLACE PACKAGE pck_api_audit AS -- Package defines audit logging API
         p_uuid app_audit.uuid%TYPE DEFAULT NULL -- User unique ID
     );
 
+    PROCEDURE archive( -- Procedure archives audit entries
+        p_days NUMBER DEFAULT 30 -- Number of days to keep audit entries
+    );
+
 END;
 /
