@@ -60,9 +60,13 @@ CREATE OR REPLACE PACKAGE pck_api_auth AS -- Package provides methods for issuin
         p_permission app_permissions.permission%TYPE -- Permission
     ) RETURN PLS_INTEGER; -- Permission (0 - no permission, 1 - has permission)
 
-    PROCEDURE http_401; -- Procedure sends HTTP 401 Unauthorized status
+    PROCEDURE http_401( -- Procedure sends HTTP 401 Unauthorized status
+        p_error VARCHAR2 DEFAULT NULL -- Error message
+    );
 
-    PROCEDURE http_403; -- Procedure sends HTTP 403 Forbidden status
+    PROCEDURE http_403( -- Procedure sends HTTP 403 Forbidden status
+        p_error VARCHAR2 DEFAULT NULL -- Error message
+    );
 
 END;
 /

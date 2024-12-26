@@ -345,16 +345,26 @@ create or replace PACKAGE BODY pck_api_auth AS
 
     END;
 
-    PROCEDURE http_401
+    PROCEDURE http_401(
+        p_error VARCHAR2 DEFAULT NULL
+    )
     AS
     BEGIN
-        owa_util.status_line(nstatus=>401, creason=>'Unauthorized', bclose_header=>true);
+        owa_util.status_line(nstatus => 401, creason => 'Unauthorized', bclose_header => FALSE);
+        owa_util.mime_header('application/json', FALSE);
+        owa_util.http_header_close;
+        htp.p('{"error": "' || COALESCE(p_error, 'Unauthorized') || '"}');    
     END;
 
-    PROCEDURE http_403
+    PROCEDURE http_403(
+        p_error VARCHAR2 DEFAULT NULL
+    )
     AS
     BEGIN
-        owa_util.status_line(nstatus=>403, creason=>'Forbidden', bclose_header=>true);
+        owa_util.status_line(nstatus => 403, creason => 'Unauthorized', bclose_header => FALSE);
+        owa_util.mime_header('application/json', FALSE);
+        owa_util.http_header_close;
+        htp.p('{"error": "' || COALESCE(p_error, 'Forbidden') || '"}');    
     END;
 
 END;

@@ -1,5 +1,11 @@
 # Changelog
 
+## Release 0.3.1 (2024-12-26)
+
+### Features
+
+- error message as optional parameter for `pck_api_auth.http_xyz`
+
 ## Release 0.3.0 (2024-12-25)
 
 ### Features
