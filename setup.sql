@@ -93,9 +93,9 @@ PROMPT Creating API for Email sending
 @./api/emails/pck_api_emails.pkb
 
 PROMPT Creating API for Job scheduling
-@./api/jobs/setup_jobs.sql
 @./api/jobs/pck_api_jobs.pks
 @./api/jobs/pck_api_jobs.pkb
+@./api/jobs/setup_jobs.sql
 @./api/jobs/test_jobs.sql
 
 PROMPT Creating API for Validations

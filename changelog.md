@@ -5,6 +5,7 @@
 ### Bugfixes 
 
 - Refactored `pck_api_validate` (Experimental)
+- setup script sequence for jobs fixed
 
 ## Release 0.3.1 (2024-12-26)
 
