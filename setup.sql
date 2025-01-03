@@ -123,7 +123,10 @@ PROMPT Creating API for i18n
 PROMPT Creating Demo package
 @./demo/pck_app_demo.pks
 @./demo/pck_app_demo.pkb
+
+PROMPT Enabling ORDS
 @./utl/ordsify.sql
 EXEC ordsify;
+@./utl/trg_ordsify.sql
 
 PROMPT ..done

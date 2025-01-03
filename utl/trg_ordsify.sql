@@ -1,0 +1,16 @@
+CREATE OR REPLACE TRIGGER trg_ordsify
+AFTER CREATE OR ALTER ON SCHEMA
+BEGIN
+    IF (ORA_DICT_OBJ_TYPE = 'PACKAGE' AND ORA_DICT_OBJ_NAME IS NOT NULL AND ORA_SYSEVENT = 'CREATE') THEN
+
+         DBMS_SCHEDULER.CREATE_JOB(
+            JOB_NAME        => 'JOB_ORDSIFY_' || ORA_DICT_OBJ_NAME,
+            JOB_TYPE        => 'PLSQL_BLOCK',
+            JOB_ACTION      => 'BEGIN ordsify(''' || ORA_DICT_OBJ_NAME || ''', ''v1'', FALSE); END;',
+            START_DATE      => SYSTIMESTAMP + INTERVAL '5' SECOND,
+            ENABLED         => TRUE
+        );
+
+    END IF;
+END;
+/

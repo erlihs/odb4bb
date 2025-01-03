@@ -8,7 +8,7 @@ CREATE OR REPLACE PROCEDURE ordsify (
     p_silent_mode BOOLEAN DEFAULT TRUE
 ) AS
     v_schema_name VARCHAR2(30 CHAR);
-    v_creditentials VARCHAR2(2000 CHAR);
+    v_is_ords_enabled PLS_INTEGER;
     
     v_module VARCHAR2(30 CHAR);
     v_role VARCHAR2(30 CHAR);
@@ -100,45 +100,30 @@ BEGIN
     
     log('Schema: ' || v_schema_name);
 
-    -- drop existing
-
-    ORDS.DROP_REST_FOR_SCHEMA(UPPER(v_schema_name));
-
-    COMMIT;
-
     -- Enable schema 
 
-    ORDS.enable_schema(
-        p_enabled             => TRUE,
-        p_schema              => v_schema_name,
-        p_url_mapping_type    => 'BASE_PATH',
-        p_url_mapping_pattern => v_schema_name,
-        p_auto_rest_auth      => FALSE
-    );
+    SELECT COUNT(id) 
+    INTO v_is_ords_enabled
+    FROM user_ords_schemas
+    WHERE parsing_schema = UPPER(v_schema_name)
+    AND status = 'ENABLED';
 
-    COMMIT;
-    
-    log('ORDS enabled for schema');
-    
-    -- OAuth
-/*
-    OAUTH.DELETE_CLIENT(
-        p_oauth_client_name
-    );
+    IF (v_is_ords_enabled = 0) THEN
 
-    OAUTH.CREATE_CLIENT(
-        p_name => p_oauth_client_name,
-        p_description => p_oauth_client_description,
-        p_grant_type => 'client_credentials',
-        p_owner => v_schema_name,
-        p_privilege_names => NULL, -- add later
-        p_support_email => p_oauth_client_email
-    );
+        ORDS.enable_schema(
+            p_enabled             => TRUE,
+            p_schema              => v_schema_name,
+            p_url_mapping_type    => 'BASE_PATH',
+            p_url_mapping_pattern => v_schema_name,
+            p_auto_rest_auth      => FALSE
+        );
 
-    COMMIT;
+        COMMIT;
+
+        log('ORDS enabled for schema');
+
+    END IF;    
     
-    log('OAUTH client created: ' || p_oauth_client_name); -- select client_id,client_secret from user_ords_clients;
-*/
 -- modules
    
     FOR m IN (
@@ -336,14 +321,7 @@ BEGIN
             v_patterns := v_dummy;
             
             COMMIT;
-/*    
-            OAUTH.grant_client_role(
-                p_client_name => p_oauth_client_name,
-                p_role_name   => v_role
-            );
-
-            COMMIT;
-*/            
+            
             log('');
             log(CHR(9) || 'Granted privileges to: ' || v_role); 
     
@@ -352,21 +330,10 @@ BEGIN
     END LOOP;
     
     -- done
-/*    
-    OAUTH.update_client( 
-        p_name => p_oauth_client_name,
-        p_privilege_names => v_privileges
-    );
 
-    COMMIT;
-    SELECT client_id || ':' || client_secret AS creditentials 
-    INTO v_creditentials
-    FROM user_ords_clients 
-    WHERE name = p_oauth_client_name;
-*/
     log('');
     log('Success!');  
---    log(CHR(9) || 'OAuth client creditentials: ' || v_creditentials); 
+
     
 END;
 /

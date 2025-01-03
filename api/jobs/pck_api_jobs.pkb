@@ -67,7 +67,17 @@ CREATE OR REPLACE PACKAGE BODY pck_api_jobs AS
 
         BEGIN
             DBMS_SCHEDULER.drop_job(UPPER(p_name) || '_JOB', TRUE);
+        EXCEPTION
+            WHEN OTHERS THEN NULL;
+        END;
+
+        BEGIN
             DBMS_SCHEDULER.drop_schedule(UPPER(p_name) || '_SCHEDULE');
+        EXCEPTION
+            WHEN OTHERS THEN NULL;
+        END;
+
+        BEGIN
             DBMS_SCHEDULER.drop_program( UPPER(p_name) || '_PROGRAM');
         EXCEPTION
             WHEN OTHERS THEN NULL;
