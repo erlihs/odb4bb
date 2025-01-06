@@ -2,9 +2,6 @@
 CREATE OR REPLACE PROCEDURE ordsify (
     p_package_name VARCHAR2 DEFAULT NULL,
     p_version_name VARCHAR2 DEFAULT 'v1',
---    p_oauth_client_name VARCHAR2 DEFAULT 'Bullshit Bingo',
---    p_oauth_client_description VARCHAR2 DEFAULT 'Bullshit Bingo Tips and Tricks',
---    p_oauth_client_email VARCHAR2 DEFAULT 'erlihs@gmail.com'
     p_silent_mode BOOLEAN DEFAULT TRUE
 ) AS
     v_schema_name VARCHAR2(30 CHAR);
@@ -36,59 +33,77 @@ CREATE OR REPLACE PROCEDURE ordsify (
         END IF;
     END;
 
-    FUNCTION get_comment(
-        p_package VARCHAR2,
-        p_procedure VARCHAR2,
-        p_parameter VARCHAR2
-    ) RETURN VARCHAR2
+    FUNCTION get_comment_from_user_source(
+        p_package_name IN VARCHAR2,
+        p_procedure_name IN VARCHAR2,
+        p_argument_name IN VARCHAR2,
+        p_override IN PLS_INTEGER DEFAULT 1
+    ) RETURN VARCHAR2 
     AS
-        v_comment VARCHAR2(2000 CHAR);
-    BEGIN
+        TYPE t_lines IS TABLE OF PLS_INTEGER;
+        v_lines t_lines;
+        v_text VARCHAR2(2000 CHAR);
+    BEGIN 
 
-        WITH package AS (
-            SELECT 
-                line,
-                text
+        IF p_package_name IS NULL THEN
+            RETURN NULL;
+        END IF;
+
+        IF p_procedure_name IS NULL THEN
+            
+            SELECT CASE WHEN text LIKE '%--%' THEN REPLACE(TRIM(SUBSTR(text, INSTR(text, '--') + 2 )),CHR(10),'') ELSE NULL END
+            INTO v_text
             FROM user_source
-            WHERE type = 'PACKAGE'
-            AND name = UPPER(TRIM(p_package))
-        ), firstline AS (
-            SELECT MIN(line) AS firstline
-            FROM package
-            WHERE UPPER(text) LIKE '%' || UPPER(TRIM(p_procedure)) ||'%' 
-        ), lastline AS (
-            SELECT MIN(line) AS lastline
-            FROM package
-            WHERE line > (SELECT firstline FROM firstline)
-            AND line = (
-                SELECT MIN(line) AS lastline
-                FROM package
-                WHERE line > (SELECT firstline FROM firstline)
-                AND UPPER(text) LIKE '%);%'
-            )
-        )
-        SELECT CASE WHEN text LIKE  '%--%'  THEN TRIM(SUBSTR(text, INSTR(text, '-') + 2))  ELSE NULL END
-        INTO v_comment
-        FROM package    
-        WHERE (p_parameter IS NULL AND line = (SELECT firstline  FROM firstline))
-        OR (
-            p_parameter IS NOT NULL 
-            AND line >= (SELECT firstline  FROM firstline)
-            AND line <= (SELECT lastline FROM lastline)
-            AND UPPER(text) like '%' || UPPER(TRIM(p_parameter)) || '%'
-        )
-        ;
-        
-        v_comment := REPLACE(v_comment,CHR(10),'');
-        v_comment := REPLACE(v_comment,CHR(13),'');
+            WHERE type='PACKAGE'
+            AND name = UPPER(TRIM(p_package_name))
+            AND REPLACE(UPPER(TRIM(text)),' ','') LIKE '%PACKAGE' || UPPER(TRIM(p_package_name)) || '%';
+            
+            RETURN v_text;
 
-        RETURN v_comment;
+        END IF;
+
+        SELECT line
+        BULK COLLECT INTO v_lines
+        FROM user_source
+        WHERE type='PACKAGE'
+        AND name = UPPER(TRIM(p_package_name))
+        AND REPLACE(TRIM(UPPER(text)),' ','') LIKE 'PROCEDURE' || UPPER(TRIM(p_procedure_name)) || '%'
+        ORDER BY line;
+
+       IF p_argument_name IS NULL THEN
+       
+            SELECT CASE WHEN text LIKE '%--%' THEN REPLACE(TRIM(SUBSTR(text, INSTR(text, '--') + 2 )),CHR(10),'') ELSE NULL END
+            INTO v_text
+            FROM user_source
+            WHERE type='PACKAGE'
+            AND name = UPPER(TRIM(p_package_name))
+            AND line = v_lines(p_override);
+
+            RETURN v_text;
+
+        END IF;
+
+        BEGIN
+            SELECT CASE WHEN text LIKE '%--%' THEN REPLACE(TRIM(SUBSTR(text, INSTR(text, '--') + 2 )),CHR(10),'') ELSE NULL END
+            INTO v_text
+            FROM user_source
+            WHERE type='PACKAGE'
+            AND name = UPPER(TRIM(p_package_name))
+            AND REPLACE(TRIM(UPPER(text)),' ','') LIKE UPPER(TRIM(p_argument_name)) || '%'
+            AND line > v_lines(p_override)
+            ORDER BY line
+            FETCH FIRST 1 ROWS ONLY;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                v_text := NULL;
+        END;
+
+        RETURN v_text;
 
     EXCEPTION
-        WHEN TOO_MANY_ROWS THEN
+        WHEN OTHERS THEN
             RETURN NULL;
-
-    END;
+    END;   
 
 BEGIN
 
@@ -127,14 +142,21 @@ BEGIN
 -- modules
    
     FOR m IN (
-        SELECT object_name
-        FROM all_objects
+        SELECT o.object_name
+        FROM all_objects o
         WHERE owner = UPPER(v_schema_name)
-        AND object_type = 'PACKAGE'
+        AND o.object_type = 'PACKAGE'
         AND (
             (p_package_name IS NULL)
             OR 
-            (UPPER(p_package_name) = object_name)
+            (UPPER(p_package_name) = o.object_name)
+        ) 
+        AND EXISTS (
+            SELECT p.procedure_name
+            FROM all_procedures p
+            WHERE p.owner = UPPER(v_schema_name)
+            AND p.object_name = o.object_name
+            AND (p.procedure_name LIKE 'GET_%' OR p.procedure_name LIKE 'POST_%' OR p.procedure_name LIKE 'PUT_%' OR p.procedure_name LIKE 'DELETE_%')
         )
     )
     LOOP
@@ -144,7 +166,7 @@ BEGIN
         log('');
         log('Creating module: ' || v_module);
         
-        v_comment := get_comment(m.OBJECT_NAME, NULL, NULL);
+        v_comment := get_comment_from_user_source(m.OBJECT_NAME, NULL, NULL);
         
         ORDS.define_module(
             p_module_name    => v_module,
@@ -154,7 +176,7 @@ BEGIN
         );        
 
         FOR p IN (
-            SELECT o.PROCEDURE_NAME
+            SELECT o.PROCEDURE_NAME, o.OVERLOAD
             FROM all_procedures o
             WHERE o.OBJECT_NAME = m.OBJECT_NAME
             AND o.PROCEDURE_NAME IS NOT NULL
@@ -208,8 +230,7 @@ BEGIN
     
                 v_pattern := LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p.PROCEDURE_NAME,'POST_'),'GET_'),'PUT_'),'DELETE_'),'_TOKEN')) || '/' || CASE WHEN v_method = 'GET' THEN v_pattern ELSE NULL END;
 
-                v_comment := NULL;
-                --v_comment := get_comment(m.OBJECT_NAME, p.PROCEDURE_NAME, NULL); 
+                v_comment := get_comment_from_user_source(m.OBJECT_NAME, p.PROCEDURE_NAME, NULL, COALESCE(p.OVERLOAD,1)); 
 
                 ORDS.define_template(
                     p_module_name => v_module,
@@ -254,8 +275,7 @@ BEGIN
 
                     IF a.ARGUMENT_NAME NOT IN ('P_BODY') THEN
 
-                        -- v_comment := get_comment(m.OBJECT_NAME, p.PROCEDURE_NAME, a.ARGUMENT_NAME); 
-                        v_comment := NULL;
+                        v_comment := get_comment_from_user_source(m.OBJECT_NAME, p.PROCEDURE_NAME, a.ARGUMENT_NAME, COALESCE(p.OVERLOAD,1)); 
 
                         ORDS.define_parameter(
                             p_module_name        => v_module,

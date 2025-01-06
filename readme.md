@@ -64,7 +64,7 @@ The structure is to provide separation of core modules - building blocks and the
 
 #### Exposing as a web services
 
-Any package routine with name prefixes `get_`, `post_`, `put_`, and `delete_` can be automatically exposed on Oracle Rest Data Service by calling `@ords.sql` after the package is compiled. 
+Any package routine with name prefixes `get_`, `post_`, `put_`, and `delete_` will be automatically exposed on Oracle Rest Data Service by calling `@ords.sql` after the package is compiled. 
 
 As an example,
 
@@ -91,6 +91,27 @@ will be exposed as a web service and calling `GET https://localhost:8443/ords/sc
 }
 ```
 
+To have optional query parameters, use `DEFAULT`. Example: 
+
+```plsql
+CREATE OR REPLACE PACKAGE BODY my_package AS
+
+    PROCEDURE get_hello(
+        p_name VARCHAR2 DEFAULT NULL,
+        r_hello OUT VARCHAR2 
+    ) AS
+    BEGIN
+        r_hello := 'Hello, ' || p_name;
+    END;
+
+END;    
+/
+```
+
+will be exposed as  `GET https://localhost:8443/ords/schema_name/my-package-v1/hello/?name=John`.
+
+For `POST`, `PUT` and `DELETE` - parameters shall be passed in `requestBody`.
+
 ### Modules
 
 #### Configuration settings
@@ -115,7 +136,7 @@ END;
 
 Settings are stored in the `app_settings` table.
 
-The recommended approach is to use the `XYZ``_` prefix, where `XYZ` represents the module. 
+The recommended approach is to use the `XYZ``_` prefix for the key, where `XYZ` represents the module. 
 
 #### Storage
 
@@ -215,7 +236,7 @@ Both require API keys to be added in configuration settings with the utilities [
 
 Provides e-mail sending capabilities, including multiple recipients, HTML content and attachments.
 
-For sending emails, SMTP parameters need to be added -  check the [SMTP](#smtp)[ utility](#smtp).
+For sending emails, SMTP parameters need to be added -  check the [SMTP utility](#smtp).
 
 ```plsql
 DECLARE
@@ -269,13 +290,13 @@ END;
 
 Provides user authentication and authorization capabilities.
 
-User data is stored in the `app_users` table with unique user ID `Uuid`, `username` and `password` fields.
+User data is stored in the `app_users` table with unique user ID `uuid`, `username` and `password` fields.
 
-Authentication method `pck_api_auth.auth` returns `Uuid` if authentication is successful or NULL if not. 
+Authentication method `pck_api_auth.auth` returns `uuid` if authentication is successful or NULL if not. 
 
 Method `pck_api_auth.token` issues a JWT token. Token added as a bearer token for ORDS service calls can be verified automatically by passing NULL as UUID in `pck_ap_auth.Priv` - in such cases token is automatically obtained from incoming web service calls, decoded and validated. 
 
-Authorization is implemented as simplified role-based authorization with data stored in `app_roles` (roles) and  `app_permissions` (roles-users) tables and can be checked with `pck_ap_auth.Priv` method.
+Authorization is implemented as simplified role-based authorization with data stored in `app_roles` (roles) and  `app_permissions` (roles-users) tables and can be checked with `pck_ap_auth.role` and `pck_ap_auth.perm` methods.
 
 ```plsql
 DECLARE
@@ -308,7 +329,7 @@ In general, for each publicly exposed method, authorization guard can be applied
     ) AS
 
     BEGIN
-        IF pck_api_auth.priv(NULL, 'admin') IS NULL THEN pck_api_auth.http_401; RETURN; END IF;
+        IF pck_api_auth.role(NULL, 'ADMIN') IS NULL THEN pck_api_auth.http_401('You are not authorized to view this page'); RETURN; END IF;
         
         -- all good
         ...
@@ -355,9 +376,28 @@ Running `@i18n.sql schema_name file_name` will unload translations from the `app
 
 #### ORDS
 
-Running `@ords.sql schema_name file_name` will automatically expose package routines with name prefixes `get_`, `post_`, `put_`, and `delete_` as web services on Oracle Rest Data Services and will generate and save to file Typescript type definitions for `SYS_REFCURSOR`  return attributes. 
+Running `@ords.sql schema_name file_name.yaml` will automatically expose package routines with name prefixes `get_`, `post_`, `put_`, and `delete_` as web services on Oracle Rest Data Services and will generate and save to file Open API 3.0 Manifest in YAML format. 
+
+Manifest descriptions will be generated from source comments of procedure specification, becoming descriptions for methods and parameters and responses.
+
+```plsql
+    PROCEDURE post_login( -- Procedure authenticates user and returns tokens (PUBLIC)
+        p_username APP_USERS.USERNAME%TYPE, -- User name (e-mail address)
+        p_password APP_USERS.PASSWORD%TYPE, -- Password
+        r_access_token OUT APP_TOKENS.TOKEN%TYPE, -- Token
+        r_refresh_token OUT APP_TOKENS.TOKEN%TYPE, -- Refresh token
+        r_user OUT SYS_REFCURSOR -- User data [{"uuid":"abcdef","username":"admin"}]
+    );
+```
+
+Sugar:
+
+- if procedure definition line contains `(PUBLIC)` - it will unset authentication method for this procedure. Default for all procedures is `Bearer`.
+- If out `SYS_REFCURSOR` parameter comment will include valid json example at the end - it will be used to generate schema for this output parameter. Otherwise it will be as `An unknown JSON object`.
 
 ## Final notes
+
+A good overview of [developing REST applications](https://docs.oracle.com/en/database/oracle/oracle-rest-data-services/23.2/orddg/developing-REST-applications.html#GUID-A1CD111F-724B-4E91-8202-FA899EE521F1) from Oracle.
 
 Although prerequisites require Oracle Database 19c, the solution can be easily downgraded to 12c or even lower.
 

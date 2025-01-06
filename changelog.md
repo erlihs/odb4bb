@@ -1,13 +1,15 @@
 # Changelog
 
-## Release 0.3.3 (2025-01-04)
+## Release 0.3.3 (2025-01-06)
 
 ### Features
-- Automted ORDS when recompiling package - trigger `trg_ordsify`
+- Automated ORDS when recompiling package - trigger `trg_ordsify`
+- Generation of Open API 3.0 Manifest in YAML format
 
 ### Bugfixes 
 
-- Fixed flaw in `pck_api_jobs.remove`
+- Fixed flaw that prevented deletion of job in `pck_api_jobs.remove`
+- Update of readme
 
 ## Release 0.3.2 (2024-12-30)
 
