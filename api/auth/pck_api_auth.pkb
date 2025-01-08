@@ -216,8 +216,14 @@ create or replace PACKAGE BODY pck_api_auth AS
     )
     RETURN app_users.uuid%TYPE 
     AS
-        v_token app_tokens.token%TYPE := REPLACE(OWA_UTIL.GET_CGI_ENV('Authorization'),'Bearer ','');
+        v_token app_tokens.token%TYPE;
     BEGIN
+
+        BEGIN
+            v_token := REPLACE(OWA_UTIL.GET_CGI_ENV('Authorization'),'Bearer ','');
+        EXCEPTION
+            WHEN OTHERS THEN RETURN NULL;
+        END;
 
         RETURN uuid_from_token(v_token, p_check_expiration);
 
@@ -300,7 +306,7 @@ create or replace PACKAGE BODY pck_api_auth AS
     ) RETURN PLS_INTEGER
     AS
         v_uuid app_users.uuid%TYPE := p_uuid;
-        v_role PLS_INTEGER := 0;
+        v_role PLS_INTEGER;
     BEGIN
 
         IF v_uuid IS NULL THEN v_uuid := uuid(); END IF;

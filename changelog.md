@@ -1,6 +1,6 @@
 # Changelog
 
-## Release 0.3.3 (2025-01-06)
+## Release 0.3.3 (2025-01-08)
 
 ### Features
 - Automated ORDS when recompiling package - trigger `trg_ordsify`
@@ -10,6 +10,8 @@
 
 - Fixed flaw that prevented deletion of job in `pck_api_jobs.remove`
 - Update of readme
+- pck_api_auth.uuid exception handling 
+- pck_api_auth.role returns NULL instead of 0 on no role
 
 ## Release 0.3.2 (2024-12-30)
 
