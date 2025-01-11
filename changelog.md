@@ -1,8 +1,19 @@
 # Changelog
 
+## Release 0.3.4 (2025-01-11)
+
+### Features
+
+- Refresh works either with Bearer token or Cookie
+
+### Bugfixes 
+
+- Validate package `pck_api_validate` 23ai -> 19 compatibility
+
 ## Release 0.3.3 (2025-01-08)
 
 ### Features
+
 - Automated ORDS when recompiling package - trigger `trg_ordsify`
 - Generation of Open API 3.0 Manifest in YAML format
 

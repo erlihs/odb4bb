@@ -268,7 +268,11 @@ create or replace PACKAGE BODY pck_api_auth AS
 
         v_token := get_cookie_value(p_cookie_name);
 
-        RETURN uuid_from_token(v_token, p_check_expiration);
+        IF v_token IS NULL THEN 
+            RETURN uuid;
+        ELSE        
+            RETURN uuid_from_token(v_token, p_check_expiration);
+        END IF;
 
     END;
 

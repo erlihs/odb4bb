@@ -20,13 +20,13 @@ CREATE OR REPLACE PACKAGE BODY pck_api_validate AS
     BEGIN
         
         FOR r IN (
-            SELECT jt.type, TO_CHAR(jt.value) AS value, jt.message
+            SELECT jt.type, jt.value, jt.message
             FROM json_table(
                 p_options,
                 '$.rules[*]' 
                 COLUMNS (
                     type VARCHAR2(200 CHAR) PATH '$.type',
-                    value JSON PATH '$.value',
+                    value VARCHAR2(4000 CHAR) PATH '$.value',
                     message VARCHAR2(2000 CHAR) PATH '$.message'
                 )
             ) jt    
