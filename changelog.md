@@ -1,4 +1,9 @@
-# Changelog
+
+## Release 0.3.5 (2025-01-12)
+
+### Features
+
+- Refactored i18n
 
 ## Release 0.3.4 (2025-01-11)
 

@@ -22,35 +22,16 @@ DECLARE
 
 BEGIN
 
-    SELECT JSON_SERIALIZE(
-        (   
-            SELECT 
-                JSON_OBJECTAGG(
-                    KEY l.lang VALUE 
-                    (    
-                        SELECT JSON_OBJECTAGG(
-                            KEY t.text VALUE t.translation 
-                        ) FROM (
-                            SELECT
-                                lang,
-                                CAST (text AS VARCHAR2(4000)) AS text,
-                                CAST (COALESCE(correction, translation)AS VARCHAR2(4000))  AS translation 
-                            FROM app_i18n
-                            WHERE lang = l.lang
-                        ) t
-                    )
-                )
-            FROM (
-                SELECT
-                    DISTINCT lang
-                FROM app_i18n
-            ) l
-        )
-        RETURNING CLOB PRETTY
-    ) AS i18n
+
+    SELECT JSON_SERIALIZE(JSON_ARRAYAGG(
+        JSON_OBJECT('module' VALUE module, 'locale' VALUE locale, 'key' VALUE key, 'value' VALUE value, 'translation' VALUE translation, 'correction' VALUE correction)
+    ) RETURNING CLOB PRETTY) AS data
     INTO r
-    FROM DUAL
-    ;
+    FROM (
+        SELECT module, locale, key, value, translation, correction 
+        FROM app_i18n
+        ORDER BY module, locale, key
+    );
 
     print;
 

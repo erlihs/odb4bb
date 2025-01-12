@@ -267,24 +267,11 @@ END;
 
 #### Internationalization
 
-Provides *translation* function with automated background translation via OpenAI translate API.
+Provides *translation* capabilities with automated background translation via OpenAI translate API.
 
 Run the [OpenAI](#open-ai) utility first to open the Access Control List and set the API key.
 
-```plsql
-DECLARE
-    i CLOB := 'This is just a test.';
-    o CLOB;
-BEGIN
-    o := pck_api_i18n.t(i, 'ee');
-    pck_api_i18n.job_i18n;
-    o := pck_api_i18n.t(i, 'ee');
-    IF o = i THEN 
-        RAISE_APPLICATION_ERROR(-20000, 'i18n test failed');
-    END IF;
-END;
-/
-```
+Use `pck_api_i18n.add` to batch add data to translate. Data shall be in JSON format. Run `pck_api_i18n.job_i18n` to do AI translation and `pck_api_i18n.read` to retrieve translated data.
 
 #### Authentication & Authorization  
 

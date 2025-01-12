@@ -33,9 +33,9 @@ END;
 /
 
 BEGIN
-    UPDATE app_settings SET content = '0.3.4' WHERE id = 'APP_VERSION';
+    UPDATE app_settings SET content = '0.3.5' WHERE id = 'APP_VERSION';
     IF SQL%ROWCOUNT = 0 THEN
-        INSERT INTO app_settings (id, description, content) VALUES ('APP_VERSION', 'Oracle Database for Bullshti Bingo Releae', '0.3.4');
+        INSERT INTO app_settings (id, description, content) VALUES ('APP_VERSION', 'Oracle Database for Bullshti Bingo Releae', '0.3.5');
     END IF;
     COMMIT;
 END;
