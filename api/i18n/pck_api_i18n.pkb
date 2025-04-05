@@ -40,7 +40,7 @@ CREATE OR REPLACE PACKAGE BODY pck_api_i18n AS
     ) AS
     BEGIN
         
-        SELECT JSON_OBJECTAGG(locale, JSON_OBJECTAGG(key, COALESCE(correction, translation, value)))
+        SELECT JSON_OBJECTAGG(locale, JSON_OBJECTAGG(key, COALESCE(correction, translation, value) RETURNING CLOB) RETURNING CLOB)
         INTO r_i18n
         FROM app_i18n
         WHERE (p_module IS NULL OR module = p_module)

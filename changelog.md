@@ -1,3 +1,8 @@
+## Release 0.3.6 (2025-04-05)
+
+### Bugfixes
+
+- i18n fails if more than 4k of data
 
 ## Release 0.3.5 (2025-01-12)
 
