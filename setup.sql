@@ -5,6 +5,7 @@ WHENEVER OSERROR EXIT FAILURE
 
 PROMPT Setup Oracle Database for Bullshit Bingo
 
+VARIABLE release VARCHAR2(200 CHAR)
 VARIABLE schema_name VARCHAR2(30 CHAR)
 VARIABLE schema_pass VARCHAR2(200 CHAR)
 VARIABLE app_name VARCHAR2(200 CHAR)
@@ -21,6 +22,7 @@ ARGUMENT 4 PROMPT 'Enter application host name: '
 ARGUMENT 5 PROMPT 'Enter application username (email): '
 ARGUMENT 6 PROMPT 'Enter application password: '
 
+EXEC :release := '0.3.7'
 EXEC :schema_name:= UPPER('&1');
 EXEC :schema_pass:= '&2';
 EXEC :app_name := '&3';
@@ -119,6 +121,11 @@ PROMPT Creating API for i18n
 @./api/i18n/pck_api_i18n.pks
 @./api/i18n/pck_api_i18n.pkb
 --@./api/i18n/test_i18n.sql
+
+PROMPT Creating API for data conversions
+@./api/convert/pck_api_convert.pks
+@./api/convert/pck_api_convert.pkb
+@./api/convert/test_convert.sql
 
 PROMPT Creating Demo package
 @./demo/pck_app_demo.pks

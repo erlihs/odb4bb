@@ -1,3 +1,14 @@
+## Release 0.3.7 (2025-04-13)
+
+### Features
+
+- Nev API `pck_api_convert` for converting data
+
+    - xml_to_json
+    - json_to_xml
+
+- Release increment number moved as constant to `./setup.sql`
+
 ## Release 0.3.6 (2025-04-05)
 
 ### Bugfixes
