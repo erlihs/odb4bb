@@ -20,13 +20,13 @@ CREATE OR REPLACE PACKAGE BODY pck_api_validate AS
     BEGIN
         
         FOR r IN (
-            SELECT jt.type, jt.value, jt.message
+            SELECT jt.type, jt.params, jt.message
             FROM json_table(
                 p_options,
                 '$.rules[*]' 
                 COLUMNS (
                     type VARCHAR2(200 CHAR) PATH '$.type',
-                    value VARCHAR2(4000 CHAR) PATH '$.value',
+                    params VARCHAR2(2000 CHAR)  FORMAT JSON  PATH '$.params',
                     message VARCHAR2(2000 CHAR) PATH '$.message'
                 )
             ) jt    
@@ -45,8 +45,10 @@ CREATE OR REPLACE PACKAGE BODY pck_api_validate AS
             IF r.type = 'in-range' THEN
                 IF  
                     p_value IS NULL OR 
-                    TO_NUMBER(p_value) < TO_NUMBER(JSON_VALUE(r.value,'$.min')) OR 
-                    TO_NUMBER(p_value) > TO_NUMBER(JSON_VALUE(r.value,'$.max'))
+                    (
+                        TO_NUMBER(p_value) < TO_NUMBER(JSON_VALUE(r.params,'$.min')) OR 
+                        TO_NUMBER(p_value) > TO_NUMBER(JSON_VALUE(r.params,'$.max'))
+                    )
                 THEN
                     add(r.message);
                 END IF;

@@ -1,3 +1,9 @@
+## Release 0.3.8 (2025-04-20)
+
+### Refactoring
+
+- Validation API `pck_api_validate` changed - param `value` to `params` 
+
 ## Release 0.3.7 (2025-04-13)
 
 ### Features

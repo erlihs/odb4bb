@@ -4,8 +4,8 @@ CREATE OR REPLACE PACKAGE pck_api_validate AS -- Package to validate data (Exper
     {
         "rules":
             [
-                {"type":"required","value":null,"message":"Value is required"},
-                {"type":"in-range","value":{"min":1,"max":10},"message":"Value must be between 1 and 10"}
+                {"type":"required","params":true,"message":"Value is required"},
+                {"type":"in-range","params":{"min":1,"max":10},"message":"Value must be between 1 and 10"}
             ]
     }
     */
