@@ -347,7 +347,21 @@ Running `@smtp.sql schema_name smtp_host smtp_port smtp_username smtp_password e
 
 #### Access Control List
 
-Running `@ace.sql schema_name host_name port privilege` will add an entry to the Access Control List allowing outgoing calls directly from the Oracle Database.
+Running `@ace.sql schema_name host_name port privilege` will add an entry to the Access Control List allowing outgoing calls directly from the Oracle Database. ACL need to be set from ADMIN schema.
+
+Example:
+
+```sql
+@ace.sql BSB_PRD oaidalleapiprodscus.blob.core.windows.net 443 'connect';
+```
+
+Check ACL:
+
+```sql
+SELECT a.host, a.lower_port, a.upper_port, p.principal, p.privilege, p.is_grant
+FROM dba_network_acls a
+JOIN dba_network_acl_privileges p ON a.acl = p.acl;
+```
 
 #### Open AI
 

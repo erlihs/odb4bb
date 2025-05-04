@@ -22,7 +22,7 @@ ARGUMENT 4 PROMPT 'Enter application host name: '
 ARGUMENT 5 PROMPT 'Enter application username (email): '
 ARGUMENT 6 PROMPT 'Enter application password: '
 
-EXEC :release := '0.3.8'
+EXEC :release := '0.3.9'
 EXEC :schema_name:= UPPER('&1');
 EXEC :schema_pass:= '&2';
 EXEC :app_name := '&3';

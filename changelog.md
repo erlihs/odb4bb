@@ -1,3 +1,9 @@
+## Release 0.3.9 (2025-05-04)
+
+### Feature
+
+- OpenAI api new method `pck_api_openai.image` to generate image by prompt 
+
 ## Release 0.3.8 (2025-04-20)
 
 ### Refactoring

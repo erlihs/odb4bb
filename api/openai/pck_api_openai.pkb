@@ -213,5 +213,52 @@ CREATE OR REPLACE PACKAGE BODY pck_api_openai AS
                 
   END;
 
+  PROCEDURE image(
+    p_api_key VARCHAR2,
+    p_model VARCHAR2,
+    p_prompt VARCHAR2,
+    p_n NUMBER,
+    p_size VARCHAR2,
+    r_error OUT VARCHAR2,
+    r_image OUT CLOB
+  ) AS
+    v_url VARCHAR2(4000 CHAR);
+    v_payload CLOB;
+    v_req utl_http.req;
+    v_blob BLOB;
+    v_clob CLOB;
+    j_obj JSON_OBJECT_T;
+    j_arr JSON_ARRAY_T;
+    j_val JSON_OBJECT_T;
+  BEGIN
+
+      v_url := 'https://api.openai.com/v1/images/generations';
+      
+      v_payload := '{
+        "model": "' || p_model || '",
+        "prompt": "' || j(p_prompt) || '",
+        "n": ' || p_n || ',
+        "size": "' || p_size || '"
+      }';
+  
+      pck_api_http.request(v_req, 'POST', v_url);
+      pck_api_http.request_auth_token(v_req, p_api_key);
+      pck_api_http.request_content_type(v_req, 'application/json');
+      pck_api_http.request_charset(v_req, 'UTF-8');
+      pck_api_http.request_json(v_req, v_payload);
+      pck_api_http.response_binary(v_req, v_blob);
+
+      v_clob := pck_api_lob.blob_to_clob(v_blob);
+
+      r_error := JSON_VALUE(v_clob, '$.error.message');
+      IF r_error IS NOT NULL THEN RETURN; END IF;
+
+      j_obj := JSON_OBJECT_T.parse(v_clob);
+      j_arr := j_obj.get_Array('data');
+      j_val := TREAT(j_arr.get(0) AS JSON_OBJECT_T);
+      r_image := j_val.get_Clob('b64_json');
+
+  END;    
+
 END;
 /

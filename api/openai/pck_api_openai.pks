@@ -62,6 +62,16 @@ CREATE OR REPLACE PACKAGE pck_api_openai AS -- Package provides implementation o
     p_image CLOB, -- image in base64 format
     r_message OUT CLOB -- Vision response
   );
+
+  PROCEDURE image( -- Procedure generates images, https://platform.openai.com/docs/api-reference/images
+    p_api_key VARCHAR2, -- OpenAI API Key
+    p_model VARCHAR2, -- Model (dall-e-2, dall-e-3, or gpt-image-1)
+    p_prompt VARCHAR2, -- Prompt
+    p_n NUMBER, -- Number of images (1..10)
+    p_size VARCHAR2, -- Image size ('1024x1024', '1024x1792', or '1792x1024')
+    r_error OUT VARCHAR2, -- Error message
+    r_image OUT CLOB -- Image in base64 format
+  );
   
 END;
 /
